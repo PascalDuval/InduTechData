@@ -2,9 +2,9 @@
 services:
   redpanda:
     build:
-      context: ./docker-redpanda
+      context: ./docker/redpanda
       dockerfile: Dockerfile
-    image: dataprojet9/redpanda:latest
+    image: indutech/redpanda:latest
     container_name: redpanda
     command:
       - redpanda
@@ -36,24 +36,24 @@ services:
     volumes:
       - redpanda-data:/var/lib/redpanda/data
     networks:
-      - dataprojet9_network
+      - indutech_network
 
   producer:
     build:
       context: .
-      dockerfile: Dockerfile.producer
+      dockerfile: docker/Dockerfile.producer
     container_name: producer_tickets
     depends_on:
       - redpanda
     environment:
       - KAFKA_BOOTSTRAP_SERVERS=redpanda:9092
     networks:
-      - dataprojet9_network
+      - indutech_network
 
   pyspark:
     build:
       context: .
-      dockerfile: Dockerfile.pyspark
+      dockerfile: docker/Dockerfile.pyspark
     container_name: pyspark_batch
     depends_on:
       - redpanda
@@ -65,11 +65,11 @@ services:
     user: root
     command: sh -c "mkdir -p /tmp/output && chmod -R 777 /tmp/output && python poc_tickets_batch_json.py && cp -r /tmp/output/* /app/output/ || true"
     networks:
-      - dataprojet9_network
+      - indutech_network
 
 volumes:
   redpanda-data:
 
 networks:
-  dataprojet9_network:
+  indutech_network:
     driver: bridge
