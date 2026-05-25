@@ -1,0 +1,75 @@
+
+services:
+  redpanda:
+    build:
+      context: ./docker-redpanda
+      dockerfile: Dockerfile
+    image: dataprojet9/redpanda:latest
+    container_name: redpanda
+    command:
+      - redpanda
+      - start
+      - --kafka-addr
+      - internal://0.0.0.0:9092,external://0.0.0.0:19093
+      - --advertise-kafka-addr
+      - internal://redpanda:9092,external://localhost:19093
+      - --pandaproxy-addr
+      - internal://0.0.0.0:8082,external://0.0.0.0:18086
+      - --advertise-pandaproxy-addr
+      - internal://redpanda:8082,external://localhost:18086
+      - --schema-registry-addr
+      - internal://0.0.0.0:8081,external://0.0.0.0:18085
+      - --rpc-addr
+      - redpanda:33145
+      - --advertise-rpc-addr
+      - redpanda:33145
+      - --mode
+      - dev-container
+      - --smp
+      - "1"
+      - --default-log-level=info
+    ports:
+      - "19093:9092"
+      - "18085:8081"
+      - "18086:8082"
+      - "9648:9644"
+    volumes:
+      - redpanda-data:/var/lib/redpanda/data
+    networks:
+      - dataprojet9_network
+
+  producer:
+    build:
+      context: .
+      dockerfile: Dockerfile.producer
+    container_name: producer_tickets
+    depends_on:
+      - redpanda
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=redpanda:9092
+    networks:
+      - dataprojet9_network
+
+  pyspark:
+    build:
+      context: .
+      dockerfile: Dockerfile.pyspark
+    container_name: pyspark_batch
+    depends_on:
+      - redpanda
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=redpanda:9092
+      - OUTPUT_BASE=/tmp/output
+    volumes:
+      - ./output:/app/output
+    user: root
+    command: sh -c "mkdir -p /tmp/output && chmod -R 777 /tmp/output && python poc_tickets_batch_json.py && cp -r /tmp/output/* /app/output/ || true"
+    networks:
+      - dataprojet9_network
+
+volumes:
+  redpanda-data:
+
+networks:
+  dataprojet9_network:
+    driver: bridge

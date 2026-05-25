@@ -1,0 +1,6 @@
+# Python deps for this project
+pyspark==3.5.1
+kafka-python
+mysql-connector-python
+pandas
+pyarrow

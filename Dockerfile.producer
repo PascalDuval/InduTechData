@@ -1,0 +1,10 @@
+FROM python:3.11-slim
+WORKDIR /app
+COPY requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
+COPY producer_tickets.py ./
+
+ENV KAFKA_BOOTSTRAP_SERVERS=redpanda:9092
+
+# Attendre que Redpanda soit prêt avant de démarrer
+CMD ["sh", "-c", "echo 'Waiting for Redpanda...' && sleep 10 && python producer_tickets.py"]

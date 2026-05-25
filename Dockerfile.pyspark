@@ -1,0 +1,24 @@
+FROM python:3.11-slim
+WORKDIR /app
+
+# Installer Java (version par défaut)
+RUN apt-get update && apt-get install -y \
+    default-jdk \
+    && rm -rf /var/lib/apt/lists/*
+
+# Définir JAVA_HOME (utilise la version par défaut)
+ENV JAVA_HOME=/usr/lib/jvm/default-java
+ENV PATH="$JAVA_HOME/bin:$PATH"
+
+COPY requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copier le code Spark et les scripts
+COPY poc_tickets_batch_json.py ./
+
+# Variables par défaut
+ENV KAFKA_BOOTSTRAP_SERVERS=redpanda:9092
+ENV OUTPUT_BASE=/app/output
+
+# Attendre que Redpanda soit prêt avant de démarrer
+CMD ["sh", "-c", "echo 'Waiting for Redpanda...' && sleep 15 && python poc_tickets_batch_json.py"]
